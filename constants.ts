@@ -5,7 +5,7 @@ export const CONTENT: LandingData = {
   "brand": {
     "name": "Webworks Agencia web",
     "style": "professional-tech",
-    "logoUrl": "https://i.imgur.com/XXtZal2.png"
+    "logoUrl": "https://i.imgur.com/0HX1GwZ.png"
   },
   "designSystem": {
     "colors": {

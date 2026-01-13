@@ -1,23 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronRight,
-  ShieldCheck,
-  ArrowUp,
-  Zap,
-  Target,
-  MessageSquare,
-  Rocket,
   CheckCircle2,
   Globe,
   Lock,
   ZapIcon,
-  Server
+  Server,
+  ArrowRight,
+  ArrowLeft,
+  Cpu,
+  ShieldCheck,
+  Send,
+  MessageSquare,
+  Layers,
+  Rocket,
+  CreditCard,
+  Eye,
+  FileText,
+  MousePointer2,
+  FileCheck2,
+  Download,
+  User,
+  Briefcase,
+  Link2,
+  X,
+  Menu
 } from 'lucide-react';
 import { CONTENT } from './constants';
 
 /**
- * Hook personalizado para garantizar que un video se mantenga reproduciéndose
- * a pesar de cambios de pestaña, pérdida de foco o scroll.
+ * Hook de Persistencia de Video Industrial
  */
 const useVideoPersistence = (videoRef: React.RefObject<HTMLVideoElement | null>) => {
   useEffect(() => {
@@ -25,59 +37,52 @@ const useVideoPersistence = (videoRef: React.RefObject<HTMLVideoElement | null>)
     if (!video) return;
 
     const forcePlay = () => {
-      if (video.paused) {
+      if (video && video.paused) {
         const playPromise = video.play();
         if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            console.warn("Reproducción automática prevenida o interrumpida:", error);
-          });
+          playPromise.catch(() => {});
         }
       }
     };
 
-    // 1. Manejar visibilidad de pestaña
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        // Pequeño delay para asegurar que el motor de renderizado esté listo
-        setTimeout(forcePlay, 100);
-      }
+    const handleSync = () => {
+      if (document.visibilityState === 'visible') forcePlay();
     };
 
-    // 2. Manejar foco de ventana
-    const handleFocus = () => {
-      forcePlay();
-    };
+    const handlePageShow = (e: PageTransitionEvent) => forcePlay();
 
-    // 3. Manejar entrada al viewport (evita que el móvil lo suspenda)
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            forcePlay();
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
+    const heartbeat = setInterval(() => {
+      if (document.visibilityState === 'visible') forcePlay();
+    }, 1000);
 
-    // Configuración inicial
+    const handleUserInteraction = () => forcePlay();
+
     video.muted = true;
-    video.setAttribute('playsinline', '');
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
+    video.setAttribute('autoplay', 'true');
+    video.loop = true;
+
     forcePlay();
 
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('focus', handleFocus);
-    observer.observe(video);
+    document.addEventListener('visibilitychange', handleSync);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('focus', handleSync);
+    document.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    document.addEventListener('click', handleUserInteraction, { passive: true });
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('focus', handleFocus);
-      observer.unobserve(video);
+      clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', handleSync);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('touchstart', handleUserInteraction);
+      document.removeEventListener('click', handleUserInteraction);
     };
   }, [videoRef]);
 };
 
-const Header: React.FC = () => {
+const Header: React.FC<{ setView: (v: 'landing' | 'onboarding') => void; currentView: string }> = ({ setView, currentView }) => {
   const [isOpen, setIsOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -94,17 +99,22 @@ const Header: React.FC = () => {
 
   const scrollToSection = (id: string) => {
     setIsOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
+    if (currentView !== 'landing') {
+      setView('landing');
       setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
-      }, 300);
+      }
     }
   };
 
   return (
     <>
-      <header className="relative w-full h-16 md:h-24 border-b border-[#EAEAEA] bg-white transition-all duration-300">
+      <header className="absolute top-0 left-0 w-full h-16 md:h-24 border-b border-[#EAEAEA] bg-white transition-all duration-300 z-[100]">
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <video 
             ref={videoRef}
@@ -112,7 +122,6 @@ const Header: React.FC = () => {
             loop 
             muted 
             playsInline 
-            preload="auto"
             className="w-full h-full object-cover"
           >
             <source 
@@ -124,71 +133,82 @@ const Header: React.FC = () => {
         </div>
 
         <div className="relative z-50 w-full h-full flex justify-between items-center pl-0 pr-6 md:pr-12">
-          <div className="flex items-center">
+          <div className="flex items-center cursor-pointer" onClick={() => setView('landing')}>
             <img 
               src={CONTENT.brand.logoUrl} 
-              alt={CONTENT.brand.name} 
-              className="h-24 md:h-40 w-auto object-contain brightness-0 transition-transform hover:scale-105 duration-300 -ml-4 md:-ml-12 z-10"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
+              alt="Webworks" 
+              className="h-20 md:h-32 w-auto object-contain transition-transform hover:scale-105 duration-300 -ml-4 md:-ml-12 z-10"
             />
-            <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] -ml-6 md:-ml-10 mt-0.5 md:mt-1 opacity-90 whitespace-nowrap transition-colors duration-500 ${isOpen ? 'text-white' : 'text-[#0B0B0B]'}`}>
-              {CONTENT.brand.name}
+            <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] -ml-4 md:-ml-10 mt-0.5 md:mt-1 opacity-90 whitespace-nowrap transition-colors duration-500 ${isOpen ? 'text-white' : 'text-[#0B0B0B]'}`}>
+              Webworks
             </span>
           </div>
 
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex flex-col gap-1.5 items-end group cursor-pointer p-2 outline-none focus:outline-none z-50" 
-            aria-label="Menú"
-          >
-            <div className={`h-[2px] transition-all duration-300 ease-out ${isOpen ? 'w-8 rotate-45 translate-y-2 bg-white' : 'w-6 group-hover:w-12 bg-[#0B0B0B]'}`}></div>
-            <div className={`h-[2px] transition-all duration-300 ease-out ${isOpen ? 'w-8 -rotate-45 bg-white' : 'w-10 bg-[#0B0B0B]'}`}></div>
-          </button>
+          <div className="flex items-center gap-8">
+            {currentView === 'onboarding' && !isOpen && (
+              <button 
+                onClick={() => setView('landing')}
+                className="hidden md:flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] text-black/50 hover:text-black transition-colors"
+              >
+                <ArrowLeft size={14} /> Volver
+              </button>
+            )}
+            <button 
+              onClick={() => setIsOpen(true)}
+              className={`group cursor-pointer p-2 outline-none focus:outline-none transition-opacity duration-300 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
+              aria-label="Abrir menú"
+            >
+              <div className="flex flex-col gap-1.5 items-end">
+                <div className="h-[2px] w-6 bg-[#0B0B0B]"></div>
+                <div className="h-[2px] w-10 bg-[#0B0B0B]"></div>
+              </div>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Menu Overlay */}
       <div 
-        className={`fixed inset-0 bg-[#0B0B0B] z-[60] transition-transform duration-700 cubic-bezier(0.22, 1, 0.36, 1) flex flex-col justify-center items-center ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}
+        className={`fixed inset-0 bg-[#0B0B0B] z-[130] transition-transform duration-700 cubic-bezier(0.22, 1, 0.36, 1) flex flex-col justify-center items-center ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}
       >
+        {/* Botón de equis dentro del menú */}
+        <button 
+          onClick={() => setIsOpen(false)}
+          className="absolute top-6 right-6 md:top-10 md:right-12 p-2 text-white hover:text-gray-300 transition-all duration-300 hover:rotate-90"
+          aria-label="Cerrar menú"
+        >
+          <X size={36} />
+        </button>
+
         <nav className="flex flex-col gap-8 md:gap-12 text-center">
-          <button onClick={() => scrollToSection('hero')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">
-            Inicio
-          </button>
-          <button onClick={() => scrollToSection('filosofia')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">
-            Filosofía
-          </button>
-          <button onClick={() => scrollToSection('sectores')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">
-            Sectores
-          </button>
-          <button onClick={() => scrollToSection('contacto')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">
-            Contacto
+          <button onClick={() => scrollToSection('hero')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">Inicio</button>
+          <button onClick={() => scrollToSection('filosofia')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">Filosofía</button>
+          <button onClick={() => scrollToSection('sectores')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">Sectores</button>
+          <button onClick={() => scrollToSection('pricing-section')} className="text-4xl md:text-6xl font-bold text-white tracking-tighter hover:text-gray-400 transition-colors">Inversión</button>
+          <button 
+            onClick={() => { setView('onboarding'); setIsOpen(false); }} 
+            className="mt-8 text-xs font-black uppercase tracking-[0.6em] text-white/30 hover:text-white transition-all"
+          >
+            Desplegar Proyecto
           </button>
         </nav>
-        
-        <div className="absolute bottom-12 text-white/30 text-[10px] uppercase tracking-[0.3em] font-bold">
-          Menú de Navegación
-        </div>
       </div>
     </>
   );
 };
 
-const Hero: React.FC = () => {
+// --- LANDING SECTIONS ---
+
+const Hero: React.FC<{ setView: (v: 'onboarding') => void }> = ({ setView }) => {
+  const handleScrollToSecond = () => {
+    document.getElementById('filosofia')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <section id="hero" className="relative w-full min-h-[75vh] flex items-center bg-white overflow-visible">
+    <section id="hero" className="relative w-full min-h-[75vh] flex items-center bg-white overflow-visible pt-20">
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <img 
-          src="https://i.imgur.com/uTJ43Ey.jpeg" 
-          alt="Architectural Background" 
-          className="w-full h-full object-cover opacity-60 md:opacity-80"
-        />
+        <img src="https://i.imgur.com/uTJ43Ey.jpeg" alt="Background" className="w-full h-full object-cover opacity-60 md:opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
       </div>
-
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 pt-20 md:pt-32 pb-32 md:pb-40 relative z-10 w-full">
         <div className="max-w-[1000px]">
           <h1 className="text-5xl md:text-[84px] font-bold text-[#0B0B0B] leading-[1] tracking-tighter mb-10">
@@ -196,33 +216,19 @@ const Hero: React.FC = () => {
             Profesional en <br className="hidden md:block" />
             <span className="text-[#0B0B0B]/40">menos de 24 horas!</span>
           </h1>
-          
           <p className="text-xl md:text-2xl font-medium text-[#5F5F5F] leading-snug tracking-tight mb-12 max-w-2xl">
             {CONTENT.hero.subheadline}
           </p>
-
           <button 
-            className="inline-flex items-center gap-4 bg-[#0B0B0B] text-white px-8 py-5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#222] transition-colors shadow-lg shadow-black/5"
-            onClick={() => {
-               const el = document.getElementById('pricing-section');
-               el?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            className="group inline-flex items-center gap-4 bg-[#0B0B0B] text-white px-10 py-5 rounded-full text-xs font-bold uppercase tracking-[0.2em] shadow-xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20 hover:bg-zinc-900 transition-all duration-300 active:scale-95"
+            onClick={handleScrollToSecond}
           >
-            Iniciar Proyecto
-            <ChevronRight size={16} />
+            Iniciar Proyecto <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
           </button>
         </div>
       </div>
-      
-      <div className="absolute right-0 bottom-0 z-40 w-[220px] md:w-[380px] pointer-events-none translate-x-[32%] md:translate-x-[22%] translate-y-[42%] md:translate-y-[32%] -rotate-[15deg] transform-gpu">
-        <div className="relative">
-          <div className="absolute bottom-[-5%] left-[10%] w-[80%] h-[10%] bg-black/10 blur-2xl rounded-[100%]"></div>
-          <img 
-            src="https://i.imgur.com/uyI8IGJ.png" 
-            alt="Robot Webworks" 
-            className="relative z-10 w-full h-auto object-contain" 
-          />
-        </div>
+      <div className="absolute right-0 bottom-0 z-40 w-[220px] md:w-[380px] pointer-events-none translate-x-[32%] md:translate-x-[22%] translate-y-[42%] md:translate-y-[32%] -rotate-[15deg]">
+        <img src="https://i.imgur.com/uyI8IGJ.png" alt="Robot" className="w-full h-auto object-contain" />
       </div>
     </section>
   );
@@ -230,23 +236,17 @@ const Hero: React.FC = () => {
 
 const ElevateProfessional: React.FC = () => {
   return (
-    <section id="filosofia" className="relative w-full py-24 md:py-32 border-t border-[#EAEAEA] z-20 overflow-hidden bg-white">
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <img 
-          src="https://i.imgur.com/Ec2SU7O.jpeg" 
-          alt="Premium Architecture" 
-          className="w-full h-full object-cover opacity-100 grayscale-0 scale-100 translate-y-32"
-          style={{ objectPosition: 'center bottom' }}
-        />
+    <section id="filosofia" className="relative w-full py-24 md:py-32 border-t border-[#EAEAEA] bg-white overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img src="https://i.imgur.com/Ec2SU7O.jpeg" alt="Architecture" className="w-full h-full object-cover opacity-100 translate-y-32" />
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/70 to-transparent"></div>
       </div>
-
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <div className="flex items-center gap-4 mb-8">
               <span className="h-[1px] w-12 bg-[#0B0B0B]"></span>
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/40">Nivel Superior</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/40">Premium</span>
             </div>
             <h2 className="text-4xl md:text-6xl font-bold text-[#0B0B0B] tracking-tighter leading-[1.1] mb-8">
               Ya es hora de que eleves tu <span className="text-[#0B0B0B]/40">imagen profesional.</span>
@@ -258,22 +258,11 @@ const ElevateProfessional: React.FC = () => {
               Construimos infraestructuras web que no solo se ven increíbles, sino que están diseñadas para proyectar confianza y excelencia técnica desde el primer segundo.
             </p>
           </div>
-          
           <div className="relative [perspective:2000px]">
-            <div className="absolute -inset-10 bg-black/5 blur-[100px] rounded-full translate-y-20 opacity-30 pointer-events-none"></div>
-            <div className="relative border border-[#EAEAEA] bg-white rounded shadow-[0_40px_90px_-20_rgba(0,0,0,0.18)] [transform:rotateY(-28deg)rotateX(6deg)rotateZ(1deg)] overflow-hidden">
-              <div className="h-4 md:h-7 bg-[#FBFBFB] border-b border-[#EAEAEA] flex items-center px-4 gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#E5E5E5]"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-[#E5E5E5]"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-[#E5E5E5]"></div>
-              </div>
-              <img 
-                src="https://i.imgur.com/huMLysM.jpeg" 
-                alt="Arquitectura Profesional 3D" 
-                className="w-full h-auto block"
-              />
-              <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur border border-[#EAEAEA] px-4 py-2 rounded-sm shadow-sm">
-                <span className="text-[9px] font-black text-[#0B0B0B] uppercase tracking-[0.2em]">Build 2025.01</span>
+            <div className="relative border border-[#EAEAEA] bg-white rounded shadow-2xl [transform:rotateY(-28deg)rotateX(6deg)] overflow-hidden">
+              <img src="https://i.imgur.com/huMLysM.jpeg" alt="3D Architecture" className="w-full h-auto" />
+              <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur border border-[#EAEAEA] px-4 py-2 rounded-sm">
+                <span className="text-[9px] font-black text-[#0B0B0B] uppercase tracking-[0.2em]">v.25</span>
               </div>
             </div>
           </div>
@@ -287,32 +276,26 @@ const Sectors: React.FC = () => {
   return (
     <section id="sectores" className="relative w-full py-24 md:py-48 border-t border-[#EAEAEA] bg-white overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <img 
-          src="https://i.imgur.com/PiSyZrK.jpeg" 
-          alt="Modern Architectural Interior" 
-          className="w-full h-full object-cover opacity-40 grayscale-[0.1]"
-        />
+        <img src="https://i.imgur.com/PiSyZrK.jpeg" alt="Interior" className="w-full h-full object-cover opacity-40" />
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-white/30"></div>
       </div>
-
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="flex flex-col md:flex-row gap-12 md:gap-32 items-start">
           <div className="md:w-1/2">
             <div className="mb-8 flex items-center gap-4">
               <div className="w-1 h-8 bg-[#0B0B0B]"></div>
-              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/60">Sectores Globales</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/60">Rubros</span>
             </div>
             <h2 className="text-5xl md:text-[80px] font-bold text-[#0B0B0B] tracking-tighter leading-[0.9] mb-4">
-              Diseñado para <br />
-              distintos <span className="text-[#0B0B0B]/20">sectores.</span>
+              Diseñado para <br /> distintos <span className="text-[#0B0B0B]/20">sectores.</span>
             </h2>
           </div>
           <div className="md:w-1/2 flex flex-col justify-start md:pt-24">
             <p className="text-2xl md:text-4xl font-bold text-[#0B0B0B] leading-[1.1] tracking-tighter mb-10">
-              Nuestra estructura se adapta a distintos modelos de negocio manteniendo claridad, orden y una presencia profesional consistente.
+              Nuestra estructura se adapta a cualquier tipo de negocio, respetando la identidad de cada proyecto y manteniendo siempre una presentación clara, ordenada y profesional.
             </p>
             <p className="text-lg md:text-xl text-[#5F5F5F] leading-relaxed font-medium max-w-lg">
-              Cada sitio se construye con el mismo criterio técnico, independientemente del sector, garantizando una arquitectura robusta y eficiente.
+              Trabajamos con el mismo nivel de detalle y criterio técnico en todos los casos, para que tu sitio no solo se vea bien, sino que funcione de forma sólida y confiable desde el primer día.
             </p>
           </div>
         </div>
@@ -321,56 +304,19 @@ const Sectors: React.FC = () => {
   );
 };
 
-const ShowcaseCard: React.FC<{ imageUrl: string }> = ({ imageUrl }) => (
-  <div className="flex-none w-[140px] md:w-[220px] px-1.5 md:px-3">
-    <div className="relative">
-      <div className="[perspective:1500px]">
-        <div className="relative shadow-[0_8px_25px_-6px_rgba(0,0,0,0.08)]">
-          <div className="relative border border-[#EAEAEA] bg-white rounded-sm overflow-hidden [transform:rotateY(-18deg)rotateX(3deg)] origin-center">
-            <div className="h-2 md:h-3 bg-[#F9F9F9] border-b border-[#EAEAEA] flex items-center px-1 md:px-1.5 gap-0.5">
-              <div className="w-0.5 h-0.5 rounded-full bg-[#EAEAEA]"></div>
-              <div className="w-0.5 h-0.5 rounded-full bg-[#EAEAEA]"></div>
-              <div className="w-0.5 h-0.5 rounded-full bg-[#EAEAEA]"></div>
-            </div>
-            <img 
-              src={imageUrl} 
-              alt="Arquitectura Web" 
-              className="w-full h-auto block"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 const SectorShowcase: React.FC = () => {
-  const images = [
-    "https://i.imgur.com/nWTHPJs.jpeg",
-    "https://i.imgur.com/fPJJxLS.jpeg",
-    "https://i.imgur.com/hwBemT1.jpeg",
-    "https://i.imgur.com/e5HzjfR.jpeg",
-    "https://i.imgur.com/6hHl9VE.jpeg",
-    "https://i.imgur.com/OoAd8l3.jpeg",
-    "https://i.imgur.com/87SNhCb.jpeg"
-  ];
-
+  const images = ["https://i.imgur.com/nWTHPJs.jpeg", "https://i.imgur.com/fPJJxLS.jpeg", "https://i.imgur.com/hwBemT1.jpeg", "https://i.imgur.com/e5HzjfR.jpeg", "https://i.imgur.com/6hHl9VE.jpeg", "https://i.imgur.com/OoAd8l3.jpeg", "https://i.imgur.com/87SNhCb.jpeg"];
   return (
     <section className="w-full py-10 md:py-24 border-t border-[#EAEAEA] bg-white overflow-hidden">
-      <style>{`
-        @keyframes marquee-infinite {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-marquee-infinite {
-          animation: marquee-infinite 20s linear infinite;
-        }
-      `}</style>
-      
-      <div className="relative flex whitespace-nowrap overflow-hidden pointer-events-none">
-        <div className="flex animate-marquee-infinite">
-          {[...images, ...images, ...images].map((img, idx) => (
-            <ShowcaseCard key={`item-${idx}`} imageUrl={img} />
+      <style>{`@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } } .animate-marquee { animation: marquee 20s linear infinite; }`}</style>
+      <div className="relative flex whitespace-nowrap overflow-hidden">
+        <div className="flex animate-marquee">
+          {[...images, ...images].map((img, idx) => (
+            <div key={idx} className="flex-none w-[140px] md:w-[220px] px-3">
+              <div className="border border-[#EAEAEA] bg-white rounded-sm overflow-hidden [transform:rotateY(-18deg)]">
+                <img src={img} alt="Web" className="w-full h-auto" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -382,39 +328,24 @@ const QualificationSection: React.FC = () => {
   return (
     <section id="contacto" className="relative w-full py-24 md:py-48 bg-white overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <img 
-          src="https://i.imgur.com/5R3snoy.jpeg" 
-          alt="Architectural Luxury Background" 
-          className="w-full h-full object-cover opacity-60 grayscale-[0.2]"
-        />
+        <img src="https://i.imgur.com/5R3snoy.jpeg" alt="Luxury" className="w-full h-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
       </div>
-
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-32 items-start">
           <div className="space-y-12">
             <h2 className="text-4xl md:text-7xl font-bold text-[#0B0B0B] tracking-tighter leading-[0.95]">
-              ¿Aún no tienes <br />
-              <span className="text-[#0B0B0B]/30">claridad</span> sobre <br />
-              tu negocio?
+              ¿Aún no tienes <br /> <span className="text-[#0B0B0B]/30">claridad</span> sobre <br /> tu negocio?
             </h2>
             <div className="relative inline-block mt-4">
-               <div className="relative w-[180px] md:w-[240px] opacity-90 rotate-[-4deg]">
-                 <img 
-                   src="https://i.imgur.com/970wptI.png" 
-                   alt="Negocio Dormido" 
-                   className="w-full h-auto object-contain"
-                 />
-               </div>
+              <img src="https://i.imgur.com/970wptI.png" alt="Dormido" className="w-[180px] md:w-[240px] opacity-90 rotate-[-4deg]" />
             </div>
           </div>
-
           <div className="flex flex-col justify-start">
             <div className="space-y-10 max-w-xl">
               <div className="space-y-4">
                 <p className="text-4xl md:text-6xl font-bold text-[#0B0B0B] tracking-tighter leading-[1]">
-                  Este servicio <br />
-                  <span className="text-[#E02424]">no es para ti.</span>
+                  Este servicio <br /> <span className="text-[#E02424]">no es para ti.</span>
                 </p>
                 <div className="h-[1px] w-24 bg-[#E02424]"></div>
               </div>
@@ -431,37 +362,20 @@ const QualificationSection: React.FC = () => {
 
 const PositiveActionSection: React.FC = () => {
   return (
-    <section id="final-section" className="relative w-full py-24 md:py-64 bg-white overflow-visible">
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: "url('https://i.imgur.com/LIwqSRa.jpeg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          opacity: 0.8
-        }}
-      >
+    <section className="relative w-full py-24 md:py-64 bg-white">
+      <div className="absolute inset-0 z-0" style={{backgroundImage: "url('https://i.imgur.com/LIwqSRa.jpeg')", backgroundSize: 'cover', opacity: 0.8}}>
         <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/20 to-white/95"></div>
       </div>
-
-      {/* Robot in spaceship at the transition - Adjusted position to be lower */}
-      <div className="absolute top-0 right-0 z-40 w-[240px] md:w-[480px] pointer-events-none -translate-y-[55%] -translate-x-[5%] md:-translate-x-[8%] hover:scale-110 transition-transform duration-700">
-        <img 
-          src="https://i.imgur.com/VbadOB9.png" 
-          alt="Robot in Spaceship" 
-          className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
-        />
+      <div className="absolute top-0 right-0 z-40 w-[240px] md:w-[480px] pointer-events-none -translate-y-[55%] -translate-x-[5%] hover:scale-110 transition-transform duration-700">
+        <img src="https://i.imgur.com/VbadOB9.png" alt="Robot Ship" className="w-full h-auto drop-shadow-2xl" />
       </div>
-
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold text-[#0B0B0B] tracking-tighter leading-tight mb-8">
-            ¡Pero a ti que sabes tu potencial, <br />
-            <span className="text-[#16a34a]">esto es para ti!</span>
+          <h2 className="text-3xl md:text-5xl font-bold text-[#0B0B0B] tracking-tighter mb-8">
+            ¡Pero a ti que sabes tu potencial, <br /> <span className="text-[#16a34a]">esto es para ti!</span>
           </h2>
-
           <p className="text-xl md:text-2xl font-medium text-[#0B0B0B] leading-relaxed max-w-3xl">
-            Si entiendes que la mediocridad digital es el enemigo invisible de tu rentabilidad, has llegado al lugar correcto. Construimos plataformas de alto rendimiento para quienes exigen excelencia.
+            Si entiendes que la mediocridad digital es el enemigo invisible de tu rentabilidad, has llegado al lugar correcto. Con Webworks elevar tu imagen profesional es posible gracias a nuestro nivel de detalle en nuestras paginas web.
           </p>
         </div>
       </div>
@@ -471,109 +385,76 @@ const PositiveActionSection: React.FC = () => {
 
 const SpacerSection: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
-
   useVideoPersistence(videoRef);
-
   return (
     <section className="w-full bg-white py-0 overflow-hidden relative">
-      <div className="w-full flex justify-center">
-        <div className="relative w-full overflow-hidden leading-[0]">
-           <video 
-            ref={videoRef}
-            autoPlay 
-            loop 
-            muted 
-            playsInline 
-            preload="auto"
-            className="w-full h-auto block scale-110 md:scale-115 origin-center pointer-events-none"
-            style={{ filter: 'contrast(1.02)' }}
-          >
-            <source 
-              src="https://mqajxigehitkgdtepqzi.supabase.co/storage/v1/object/public/Video%20surf/Caminando_hacia_el_202601122244_xl212.mp4" 
-              type="video/mp4" 
-            />
-          </video>
-        </div>
-      </div>
+      <video ref={videoRef} autoPlay loop muted playsInline className="w-full h-auto block scale-110">
+        <source src="https://mqajxigehitkgdtepqzi.supabase.co/storage/v1/object/public/Video%20surf/Caminando_hacia_el_202601122244_xl212.mp4" type="video/mp4" />
+      </video>
     </section>
   );
 };
 
-const PricingSection: React.FC = () => {
-  return (
-    <section id="pricing-section" className="relative w-full pt-32 pb-48 md:pt-64 md:pb-80 bg-white overflow-hidden border-b border-[#EAEAEA]">
-      {/* Background Layer */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <img 
-          src="https://i.imgur.com/s6JeFdz.jpeg" 
-          alt="Technical Network Pattern" 
-          className="w-full h-full object-cover brightness-105 contrast-[1.05]"
-          style={{ objectPosition: 'right top' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/20"></div>
-      </div>
+const PricingSection: React.FC<{ setView: (v: 'onboarding') => void }> = ({ setView }) => {
+  const handleScrollToHosting = () => {
+    document.getElementById('hosting-bonus')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
+  return (
+    <section id="pricing-section" className="relative w-full pt-16 pb-24 md:pt-24 md:pb-32 bg-white overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img src="https://i.imgur.com/s6JeFdz.jpeg" alt="Pattern" className="w-full h-full object-cover opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
+      </div>
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-12">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-[1px] bg-[#0B0B0B]/20"></div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0B0B0B]/40">Propuesta de Valor</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0B0B0B]/40">Inversión</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-bold text-[#0B0B0B] tracking-tighter leading-[1.1]">
-                <span className="text-[#0B0B0B]/30 font-medium block mb-2 md:mb-4">
-                  Webs que normalmente cuestan cientos de miles de colones.
-                </span>
-                Webworks las pone a tu <br className="hidden md:block" />
-                alcance por tan solo:
+                <span className="text-[#0B0B0B]/30 font-medium block mb-4">Webs que normalmente cuestan cientos de miles de colones.</span>
+                Webworks las pone a tu alcance por tan solo:
               </h2>
             </div>
           </div>
-
           <div className="relative group">
-            <div className="absolute -inset-4 bg-gradient-to-r from-black/5 to-transparent blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div className="relative bg-white/95 backdrop-blur-md border border-[#EAEAEA] p-10 md:p-14 rounded shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] text-center">
-              <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/30 mb-6">Inversión Única</div>
-              <div className="text-6xl md:text-8xl font-black text-[#0B0B0B] tracking-tighter mb-10">
-                ₡40,000
-              </div>
-              
+            <div className="relative bg-white/95 backdrop-blur-md border border-[#EAEAEA] p-10 md:p-14 rounded-2xl shadow-2xl text-center overflow-hidden">
+              <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/30 mb-6 pt-10">Inversión Única</div>
+              <div className="text-6xl md:text-8xl font-black text-[#0B0B0B] tracking-tighter mb-10">₡40,000</div>
               <ul className="space-y-8 mb-12 text-left max-w-[360px] mx-auto border-t border-b border-[#F5F5F5] py-10">
                 <li className="flex items-start gap-4">
-                  <CheckCircle2 size={18} className="text-[#0B0B0B] mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <CheckCircle2 size={18} className="text-[#0B0B0B] shrink-0 mt-0.5" strokeWidth={1.5} />
                   <div>
-                    <p className="text-[14px] font-bold text-[#0B0B0B] leading-tight tracking-tight uppercase">Imagen de Autoridad</p>
-                    <p className="text-[12px] font-medium text-[#5F5F5F] mt-1.5 leading-relaxed">Atrae mejores clientes.</p>
+                    <p className="text-[14px] font-bold text-[#0B0B0B] uppercase">Imagen de Autoridad</p>
+                    <p className="text-[12px] font-medium text-[#5F5F5F] mt-1 tracking-tight">Atrae mejores clientes.</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
-                  <CheckCircle2 size={18} className="text-[#0B0B0B] mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <CheckCircle2 size={18} className="text-[#0B0B0B] shrink-0 mt-0.5" strokeWidth={1.5} />
                   <div>
-                    <p className="text-[14px] font-bold text-[#0B0B0B] leading-tight tracking-tight uppercase">Hosting GRATIS</p>
-                    <p className="text-[12px] font-medium text-[#5F5F5F] mt-1.5 leading-relaxed">Sin pagos mensuales.</p>
+                    <p className="text-[14px] font-bold text-[#0B0B0B] uppercase">Hosting GRATIS</p>
+                    <p className="text-[12px] font-medium text-[#5F5F5F] mt-1 tracking-tight">Sin pagos mensuales.</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
-                  <CheckCircle2 size={18} className="text-[#0B0B0B] mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <CheckCircle2 size={18} className="text-[#0B0B0B] shrink-0 mt-0.5" strokeWidth={1.5} />
                   <div>
-                    <p className="text-[14px] font-bold text-[#0B0B0B] leading-tight tracking-tight uppercase">Venta en Automático</p>
-                    <p className="text-[12px] font-medium text-[#5F5F5F] mt-1.5 leading-relaxed">Tu negocio abierto 24/7.</p>
+                    <p className="text-[14px] font-bold text-[#0B0B0B] uppercase">Venta en Automático</p>
+                    <p className="text-[12px] font-medium text-[#5F5F5F] mt-1 tracking-tight">Tu negocio abierto 24/7.</p>
                   </div>
                 </li>
               </ul>
-              
-              <p className="text-[10px] font-medium uppercase tracking-[0.4em] text-[#0B0B0B]/60 mb-12">
-                El éxito de tu servicio empieza con tu imagen
-              </p>
-
-              <button 
-                className="w-full bg-[#0B0B0B] text-white py-5 rounded font-bold uppercase tracking-[0.25em] text-[10px] hover:bg-zinc-800 transition-all shadow-2xl shadow-black/10 flex items-center justify-center gap-3 group/btn"
-              >
-                Activar Proyecto
-                <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-              </button>
+              <div className="px-10 pb-10">
+                <button 
+                  className="group w-full bg-[#0B0B0B] text-white py-6 rounded-full font-bold uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-black/20 hover:bg-zinc-900 transition-all duration-300 flex items-center justify-center gap-3"
+                  onClick={handleScrollToHosting}
+                >
+                  Iniciar Proyecto <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -584,147 +465,346 @@ const PricingSection: React.FC = () => {
 
 const HostingBonusSection: React.FC = () => {
   return (
-    <section className="relative w-full py-24 md:py-48 bg-white overflow-hidden border-b border-[#EAEAEA]">
-      {/* Cuadrícula Técnica de Fondo */}
-      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
-      
+    <section id="hosting-bonus" className="relative w-full pt-16 pb-24 md:pt-24 md:pb-32 bg-white border-b border-[#EAEAEA] overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <img 
+          src="https://i.imgur.com/6xa0w6I.jpeg" 
+          alt="Clean Architecture Background" 
+          className="w-full h-full object-cover opacity-100 brightness-110 contrast-[1.05]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/10"></div>
+      </div>
+
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div>
             <div className="flex items-center gap-4 mb-10">
               <span className="h-[2px] w-12 bg-[#0B0B0B]"></span>
-              <span className="text-[11px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]">Infraestructura</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]">Hosting</span>
             </div>
-            
-            <h2 className="text-5xl md:text-8xl font-black text-[#0B0B0B] tracking-tighter leading-[0.9] mb-12">
-              ¡Eso no <br /> es todo!
-            </h2>
-            
+            <h2 className="text-5xl md:text-8xl font-black text-[#0B0B0B] tracking-tighter leading-[0.9] mb-12">¡Eso no <br /> es todo!</h2>
             <p className="text-2xl md:text-4xl font-light text-[#0B0B0B] leading-tight tracking-tight max-w-xl mb-16">
               Te ayudamos a publicar tu sitio en un hosting <span className="font-bold border-b-2 border-black/10">100% GRATIS</span>, con dominio personalizado incluido.
             </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-pulse"></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-[#0B0B0B]/40">Status: Active</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Server size={20} strokeWidth={1.5} className="text-[#0B0B0B]/80" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#0B0B0B]">Infraestructura Global</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-pulse"></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-[#0B0B0B]/40">Status: Secured</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Lock size={20} strokeWidth={1.5} className="text-[#0B0B0B]/80" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#0B0B0B]">Seguridad SSL</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-pulse"></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-[#0B0B0B]/40">Status: Fast</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <ZapIcon size={20} strokeWidth={1.5} className="text-[#0B0B0B]/80" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#0B0B0B]">Carga Óptima</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-pulse"></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-[#0B0B0B]/40">Status: Live</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Globe size={20} strokeWidth={1.5} className="text-[#0B0B0B]/80" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#0B0B0B]">Disponibilidad 24/7</span>
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-10">
+              <div className="flex items-center gap-4 opacity-70"><Server size={20} /><span className="text-xs font-bold uppercase tracking-widest">Global</span></div>
+              <div className="flex items-center gap-4 opacity-70"><Lock size={20} /><span className="text-xs font-bold uppercase tracking-widest">Seguridad</span></div>
+              <div className="flex items-center gap-4 opacity-70"><ZapIcon size={20} /><span className="text-xs font-bold uppercase tracking-widest">Velocidad</span></div>
+              <div className="flex items-center gap-4 opacity-70"><Globe size={20} /><span className="text-xs font-bold uppercase tracking-widest">Online</span></div>
             </div>
           </div>
-
           <div className="relative [perspective:2000px]">
-            {/* Visual de Navegador Flotante */}
-            <div className="relative bg-white border border-[#EAEAEA] rounded-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden [transform:rotateY(-20deg)rotateX(10deg)] hover:[transform:rotateY(-10deg)rotateX(5deg)] transition-transform duration-700 ease-out">
+            <div className="bg-white border border-[#EAEAEA] rounded-xl shadow-2xl overflow-hidden [transform:rotateY(-20deg)rotateX(10deg)]">
               <div className="h-10 bg-[#FBFBFB] border-b border-[#EAEAEA] flex items-center px-4 justify-between">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#EAEAEA]"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#EAEAEA]"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#EAEAEA]"></div>
-                </div>
-                <div className="bg-white border border-[#EAEAEA] rounded-md px-4 py-1 flex items-center gap-2 w-1/2 justify-center">
-                  <Lock size={10} className="text-[#16a34a]" />
-                  <span className="text-[9px] font-medium text-[#5F5F5F] tracking-tight">tu-negocio.com</span>
-                </div>
-                <div className="w-12"></div>
+                <div className="bg-white border border-[#EAEAEA] rounded-md px-4 py-1 flex items-center gap-2"><Lock size={10} className="text-[#16a34a]" /><span className="text-[9px] font-medium text-[#5F5F5F]">tu-negocio.com</span></div>
               </div>
-              <div className="p-8 md:p-12 bg-white">
-                <div className="aspect-video w-full bg-[#FBFBFB] rounded-lg border border-[#F0F0F0] overflow-hidden relative">
-                   <div className="absolute inset-0 flex items-center justify-center">
-                      <Globe size={48} strokeWidth={0.5} className="text-[#0B0B0B]/5 animate-spin-slow" style={{ animationDuration: '20s' }} />
-                   </div>
-                   <div className="p-6 space-y-4">
-                      <div className="h-4 w-1/3 bg-black/5 rounded"></div>
-                      <div className="h-8 w-2/3 bg-black/5 rounded"></div>
-                      <div className="h-4 w-full bg-black/5 rounded"></div>
-                      <div className="h-4 w-full bg-black/5 rounded"></div>
-                   </div>
-                </div>
+              <div className="p-12 bg-white aspect-video flex items-center justify-center">
+                <Globe size={48} className="text-[#0B0B0B]/5 animate-pulse" />
               </div>
-            </div>
-            
-            {/* Elementos Decorativos Flotantes */}
-            <div className="absolute -top-12 -right-6 bg-white border border-[#EAEAEA] p-4 rounded-lg shadow-xl z-20 animate-bounce-slow">
-               <div className="flex items-center gap-3">
-                  <div className="p-2 bg-black rounded-full">
-                    <CheckCircle2 size={14} className="text-white" />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest">Hosting Gratis</span>
-               </div>
             </div>
           </div>
         </div>
       </div>
-      <style>{`
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow linear infinite;
-        }
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-bounce-slow {
-          animation: bounce-slow 4s ease-in-out infinite;
-        }
-      `}</style>
     </section>
   );
 };
 
+const FinalCTASection: React.FC<{ setView: (v: 'onboarding') => void }> = ({ setView }) => {
+  return (
+    <section id="final-cta" className="relative w-full pt-32 md:pt-56 pb-0 bg-white overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img 
+          src="https://i.imgur.com/8jDtw9w.jpeg" 
+          alt="Corporate Architecture" 
+          className="w-full h-full object-cover object-center scale-110 opacity-[0.98]"
+        />
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-white/20 to-white"></div>
+      </div>
+
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10 text-center pb-12 md:pb-20">
+        <div className="flex flex-col items-center max-w-5xl mx-auto space-y-16">
+          <div className="space-y-8">
+            <h2 className="text-5xl md:text-[150px] font-black text-[#0B0B0B] tracking-[-0.08em] leading-[0.8] text-center">
+              ¡Qué estás <br /> esperando!
+            </h2>
+          </div>
+
+          <div className="flex flex-col items-center space-y-10">
+            <p className="text-2xl md:text-5xl font-semibold text-[#0B0B0B] tracking-[-0.05em] leading-[1] max-w-4xl mx-auto px-4">
+              No permitas que una <span className="text-[#0B0B0B]/30">imagen mediocre</span> <br className="hidden md:block" /> sea el techo de tu crecimiento.
+            </p>
+            <div className="w-16 h-[2px] bg-black/5"></div>
+            <p className="text-xl md:text-3xl font-medium text-[#0B0B0B] tracking-tight">
+              Únete a los negocios que ya operan con <span className="font-bold underline decoration-black/5 underline-offset-8">autoridad digital.</span>
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center gap-16 pt-10">
+            <button 
+              className="group relative inline-flex items-center bg-[#0B0B0B] text-white px-20 py-8 rounded-full text-xs md:text-sm font-bold uppercase tracking-[0.4em] transition-all duration-500 hover:bg-zinc-900 hover:px-24 active:scale-95 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.3)] hover:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)]"
+              onClick={() => setView('onboarding')}
+            >
+              Empezar mi proyecto
+              <ArrowRight className="ml-8 transition-transform group-hover:translate-x-3" size={20} />
+            </button>
+
+            <div className="flex flex-col items-center gap-6 pt-12 border-t border-black/5 w-full max-w-xl">
+              <img src="https://i.imgur.com/0HX1GwZ.png" alt="Webworks" className="h-16 md:h-24 w-auto object-contain" />
+              <div className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.5em] text-black/50 flex flex-col md:flex-row items-center gap-2 md:gap-4">
+                <span className="whitespace-nowrap">Webworks corporation</span>
+                <span className="hidden md:inline text-black/20">•</span>
+                <span className="whitespace-nowrap">© 2026 WEBWORKS AGENCIA WEB</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="absolute inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay">
+         <div className="absolute h-full w-[1px] bg-black left-1/4"></div>
+         <div className="absolute h-full w-[1px] bg-black left-2/4"></div>
+         <div className="absolute h-full w-[1px] bg-black left-3/4"></div>
+         <div className="absolute w-full h-[1px] bg-black top-1/2"></div>
+      </div>
+    </section>
+  );
+};
+
+// --- ONBOARDING VIEW ---
+
+const OnboardingPage: React.FC = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    service: '',
+    referral: ''
+  });
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleWhatsAppSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const { name, service, referral } = formData;
+    
+    // Validar que los campos no estén vacíos
+    if (!name || !service || !referral) {
+      alert("Por favor completa todos los campos para iniciar tu proyecto.");
+      return;
+    }
+
+    const message = `*Nuevo Proyecto Webworks* 🚀\n\n` +
+                    `*Nombre:* ${name}\n` +
+                    `*Servicios detallados:* ${service}\n` +
+                    `*Perfil/Referencias:* ${referral}`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/50661197610?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div className="relative w-full min-h-screen bg-white pt-24 md:pt-32 pb-0 overflow-hidden">
+      {/* Imagen de Fondo Solicitada */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img 
+          src="https://i.imgur.com/LMEevPg.jpeg" 
+          alt="Background Pattern" 
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-white/40"></div>
+      </div>
+
+      <div className="relative z-10">
+        <section className="max-w-[1200px] mx-auto px-6 md:px-12 mb-20 md:mb-24">
+          <div className="flex flex-col md:flex-row gap-12 md:gap-24 items-start">
+            <div className="md:w-1/2">
+              <div className="mb-8 flex items-center gap-3">
+                <div className="w-1 h-8 bg-[#0B0B0B]"></div>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#0B0B0B]/40">Metodología</span>
+              </div>
+              <h2 className="text-4xl md:text-6xl font-bold text-[#0B0B0B] tracking-tight leading-[1.1] mb-8">
+                ¿Cómo <br /> <span className="text-[#0B0B0B]/20">Trabajamos?</span>
+              </h2>
+            </div>
+            <div className="md:w-1/2 flex flex-col justify-start md:pt-20">
+              <p className="text-xl md:text-2xl font-medium text-[#0B0B0B] leading-snug tracking-tight mb-10 max-w-lg">
+                En Webworks sabemos la confianza y seguridad que nuestros clientes necesitan, es por eso que tenemos un sistema de trabajo seguro para todos nuestros clientes.
+              </p>
+              <div className="h-[1.5px] w-24 bg-[#0B0B0B]"></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="max-w-[1200px] mx-auto px-6 md:px-12 mb-32 md:mb-40">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { 
+                num: '01', 
+                title: 'Envío de información', 
+                desc: 'Tú nos envías información breve del negocio o servicio que ofreces.', 
+                icon: <FileText size={20} strokeWidth={1.5} />, 
+                color: 'bg-zinc-50/80 backdrop-blur-sm' 
+              },
+              { 
+                num: '02', 
+                title: 'Creación de estructura', 
+                desc: 'Recibimos tu información y trabajamos en una estructura real para que puedas ver tu página web antes de comprarla.', 
+                icon: <MousePointer2 size={20} strokeWidth={1.5} />, 
+                color: 'bg-zinc-100/60 backdrop-blur-sm' 
+              },
+              { 
+                num: '03', 
+                title: 'Revisión y confirmación', 
+                desc: 'Te enviamos la estructura para que la revises. Compruebas que todo sea correcto.', 
+                icon: <FileCheck2 size={20} strokeWidth={1.5} />, 
+                color: 'bg-zinc-50/80 backdrop-blur-sm' 
+              },
+              { 
+                num: '04', 
+                title: 'Pago y entrega', 
+                desc: 'Una vez completada la revisión, realizas el depósito de los ₡40,000 de tu página web por Sinpe móvil o transferencia bancaria para proceder con la entrega de los archivos finales de tu página web.', 
+                icon: <CreditCard size={20} strokeWidth={1.5} />, 
+                color: 'bg-zinc-100/60 backdrop-blur-sm' 
+              }
+            ].map((item, idx) => (
+              <div key={idx} className={`relative rounded-[32px] p-8 md:p-10 flex flex-col h-full transition-all duration-500 hover:shadow-lg ${item.color} border border-black/[0.02]`}>
+                <div className="flex justify-between items-start mb-12 text-black/70">
+                  <div>{item.icon}</div>
+                  <span className="text-2xl font-bold opacity-10 tracking-tighter text-black">{item.num}</span>
+                </div>
+                <div className="flex-grow">
+                  <h3 className="text-base font-bold tracking-tight mb-4 uppercase leading-tight text-black">{item.title}</h3>
+                  <p className="text-[15px] font-medium leading-relaxed text-black/50">{item.desc}</p>
+                  {idx === 3 && (
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-red-600 mt-5 leading-snug">
+                      * El pago debe realizarse el mismo día de la entrega. De no abonarse, el proyecto quedará anulado.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="max-w-[1200px] mx-auto px-6 md:px-12 pb-20">
+          <div className="bg-[#F5F5F7]/90 backdrop-blur-md rounded-[48px] p-8 md:p-20 overflow-hidden relative border border-black/[0.02]">
+            <div className="max-w-3xl mx-auto relative z-10">
+              <div className="text-center mb-16 space-y-4">
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-[#0B0B0B]">Configuración del Proyecto</h2>
+                <p className="text-lg text-[#5F5F5F] font-medium max-w-lg mx-auto leading-relaxed">
+                  Completa los detalles a continuación para iniciar la estructura de tu nuevo sitio web profesional.
+                </p>
+              </div>
+              
+              <form className="space-y-10" onSubmit={handleWhatsAppSubmit}>
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40 ml-4">Nombre del Negocio o Marca</label>
+                    <p className="text-[10px] text-black/20 ml-4">Nombre comercial que se mostrará en el encabezado.</p>
+                  </div>
+                  <input 
+                    type="text" 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Ej: Consultoría Integral Smith" 
+                    className="w-full bg-white border border-black/[0.05] rounded-2xl px-6 py-5 text-black font-semibold outline-none focus:ring-4 focus:ring-black/5 transition-all" 
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40 ml-4">¿Qué servicios ofreces específicamente?</label>
+                    <p className="text-[10px] text-black/20 ml-4">Enumera detalladamente los servicios que deseas destacar.</p>
+                  </div>
+                  <textarea 
+                    rows={4} 
+                    name="service"
+                    value={formData.service}
+                    onChange={handleChange}
+                    placeholder="Ej: Limpieza de cutis, Masajes relajantes, Tratamientos de hidratación, etc." 
+                    className="w-full bg-white border border-black/[0.05] rounded-2xl px-6 py-5 text-black font-semibold outline-none focus:ring-4 focus:ring-black/5 transition-all resize-none" 
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40 ml-4">Perfil de Facebook, Instagram o web antigua</label>
+                    <p className="text-[10px] text-black/20 ml-4">Proporciona enlaces para conocer tu identidad visual y redes sociales actuales.</p>
+                  </div>
+                  <input 
+                    type="text" 
+                    name="referral"
+                    value={formData.referral}
+                    onChange={handleChange}
+                    placeholder="Enlace de perfil de red social o web" 
+                    className="w-full bg-white border border-black/[0.05] rounded-2xl px-6 py-5 text-black font-semibold outline-none focus:ring-4 focus:ring-black/5 transition-all" 
+                  />
+                </div>
+
+                <div className="pt-6">
+                  <button 
+                    type="submit"
+                    className="w-full bg-black text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-zinc-900 transition-all duration-300 flex items-center justify-center gap-4"
+                  >
+                    Enviar y empezar <ArrowRight size={16} />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <footer className="pt-16 pb-12 border-t border-black/5 bg-white">
+          <div className="max-w-[1200px] mx-auto px-6 flex flex-col items-center gap-6">
+            <img src="https://i.imgur.com/0HX1GwZ.png" alt="Webworks" className="h-16 w-auto object-contain" />
+            <div className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.5em] text-black/40 flex flex-col md:flex-row items-center gap-2 md:gap-4">
+              <span className="whitespace-nowrap">Webworks corporation</span>
+              <span className="hidden md:inline text-black/20">•</span>
+              <span className="whitespace-nowrap">© 2026 WEBWORKS AGENCIA WEB</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN APP COMPONENT ---
+
 const App: React.FC = () => {
+  const [view, setView] = useState<'landing' | 'onboarding'>('landing');
+
   return (
     <div className="relative w-full min-h-screen bg-white text-[#0B0B0B] selection:bg-[#0B0B0B] selection:text-white antialiased overflow-x-hidden">
       <main className="w-full">
-        <Header />
-        <Hero />
-        <ElevateProfessional />
-        <Sectors />
-        <SectorShowcase />
-        <QualificationSection />
-        <PositiveActionSection />
-        <SpacerSection />
-        <PricingSection />
-        <HostingBonusSection />
+        <Header setView={setView} currentView={view} />
+        
+        {view === 'landing' ? (
+          <div className="animate-in fade-in duration-700">
+            <Hero setView={setView} />
+            <ElevateProfessional />
+            <Sectors />
+            <SectorShowcase />
+            <QualificationSection />
+            <PositiveActionSection />
+            <SpacerSection />
+            <PricingSection setView={setView} />
+            <HostingBonusSection />
+            <FinalCTASection setView={setView} />
+          </div>
+        ) : (
+          <OnboardingPage />
+        )}
       </main>
     </div>
   );
