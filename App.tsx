@@ -15,8 +15,73 @@ import {
 } from 'lucide-react';
 import { CONTENT } from './constants';
 
+/**
+ * Hook personalizado para garantizar que un video se mantenga reproduciéndose
+ * a pesar de cambios de pestaña, pérdida de foco o scroll.
+ */
+const useVideoPersistence = (videoRef: React.RefObject<HTMLVideoElement | null>) => {
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const forcePlay = () => {
+      if (video.paused) {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.warn("Reproducción automática prevenida o interrumpida:", error);
+          });
+        }
+      }
+    };
+
+    // 1. Manejar visibilidad de pestaña
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        // Pequeño delay para asegurar que el motor de renderizado esté listo
+        setTimeout(forcePlay, 100);
+      }
+    };
+
+    // 2. Manejar foco de ventana
+    const handleFocus = () => {
+      forcePlay();
+    };
+
+    // 3. Manejar entrada al viewport (evita que el móvil lo suspenda)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            forcePlay();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    // Configuración inicial
+    video.muted = true;
+    video.setAttribute('playsinline', '');
+    forcePlay();
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    observer.observe(video);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      observer.unobserve(video);
+    };
+  }, [videoRef]);
+};
+
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useVideoPersistence(videoRef);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,8 +91,6 @@ const Header: React.FC = () => {
     }
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
-
-  const toggleMenu = () => setIsOpen(false);
 
   const scrollToSection = (id: string) => {
     setIsOpen(false);
@@ -44,10 +107,12 @@ const Header: React.FC = () => {
       <header className="relative w-full h-16 md:h-24 border-b border-[#EAEAEA] bg-white transition-all duration-300">
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <video 
+            ref={videoRef}
             autoPlay 
             loop 
             muted 
             playsInline 
+            preload="auto"
             className="w-full h-full object-cover"
           >
             <source 
@@ -196,7 +261,7 @@ const ElevateProfessional: React.FC = () => {
           
           <div className="relative [perspective:2000px]">
             <div className="absolute -inset-10 bg-black/5 blur-[100px] rounded-full translate-y-20 opacity-30 pointer-events-none"></div>
-            <div className="relative border border-[#EAEAEA] bg-white rounded shadow-[0_40px_90px_-20px_rgba(0,0,0,0.18)] [transform:rotateY(-28deg)rotateX(6deg)rotateZ(1deg)] overflow-hidden">
+            <div className="relative border border-[#EAEAEA] bg-white rounded shadow-[0_40px_90px_-20_rgba(0,0,0,0.18)] [transform:rotateY(-28deg)rotateX(6deg)rotateZ(1deg)] overflow-hidden">
               <div className="h-4 md:h-7 bg-[#FBFBFB] border-b border-[#EAEAEA] flex items-center px-4 gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#E5E5E5]"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-[#E5E5E5]"></div>
@@ -407,14 +472,7 @@ const PositiveActionSection: React.FC = () => {
 const SpacerSection: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    // Forzamos la reproducción inmediata y constante
-    if (videoRef.current) {
-      videoRef.current.play().catch(err => {
-        console.warn("Autoplay preventivo detectado:", err);
-      });
-    }
-  }, []);
+  useVideoPersistence(videoRef);
 
   return (
     <section className="w-full bg-white py-0 overflow-hidden relative">
