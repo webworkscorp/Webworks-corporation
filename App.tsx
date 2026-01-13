@@ -4,8 +4,7 @@ import {
   ShieldCheck,
   ArrowUp,
   Zap,
-  Target,
-  Trophy
+  Target
 } from 'lucide-react';
 import { CONTENT } from './constants';
 
@@ -309,7 +308,7 @@ const SectorShowcase: React.FC = () => {
 
 const QualificationSection: React.FC = () => {
   return (
-    <section id="contacto" className="relative w-full py-24 md:py-48 border-t border-[#EAEAEA] bg-white overflow-hidden">
+    <section id="contacto" className="relative w-full py-24 md:py-48 bg-white overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img 
           src="https://i.imgur.com/5R3snoy.jpeg" 
@@ -360,11 +359,11 @@ const QualificationSection: React.FC = () => {
 
 const PositiveActionSection: React.FC = () => {
   return (
-    <section id="final-section" className="relative w-full py-24 md:py-64 bg-white border-t border-[#EAEAEA] overflow-hidden">
+    <section id="final-section" className="relative w-full py-24 md:py-64 bg-white overflow-visible">
       <div 
         className="absolute inset-0 z-0"
         style={{
-          backgroundImage: "url('https://i.imgur.com/xwN77Ti.jpeg')",
+          backgroundImage: "url('https://i.imgur.com/LIwqSRa.jpeg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           opacity: 0.8
@@ -373,15 +372,17 @@ const PositiveActionSection: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/20 to-white/95"></div>
       </div>
 
+      {/* Robot in spaceship at the transition - Adjusted position to be lower */}
+      <div className="absolute top-0 right-0 z-40 w-[240px] md:w-[480px] pointer-events-none -translate-y-[55%] -translate-x-[5%] md:-translate-x-[8%] hover:scale-110 transition-transform duration-700">
+        <img 
+          src="https://i.imgur.com/VbadOB9.png" 
+          alt="Robot in Spaceship" 
+          className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
+        />
+      </div>
+
       <div className="max-w-[1200px] mx-auto px-6 md:px-12 relative z-10">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <div className="mb-8 flex flex-col items-center gap-3">
-            <div className="p-3 bg-[#0B0B0B] rounded-full text-white shadow-xl shadow-black/10">
-              <Trophy size={28} />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0B0B0B]/60">Excelencia Probada</span>
-          </div>
-
           <h2 className="text-3xl md:text-5xl font-bold text-[#0B0B0B] tracking-tighter leading-tight mb-8">
             ¡Pero a ti que sabes tu potencial, <br />
             <span className="text-[#16a34a]">esto es para ti!</span>

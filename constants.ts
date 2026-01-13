@@ -1,8 +1,9 @@
+
 import { LandingData } from './types';
 
 export const CONTENT: LandingData = {
   "brand": {
-    "name": "Webworks",
+    "name": "Webworks Agencia web",
     "style": "professional-tech",
     "logoUrl": "https://i.imgur.com/XXtZal2.png"
   },
